@@ -11,6 +11,7 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
  * @param defaultMaxTokens output token limit used when the request does not specify one
  * @param documentsDir     directory the documents are read from
  * @param defaultFile      document used when the request does not specify one
+ * @param mockEnabled      whether mock document question service is enabled
  */
 @ConfigurationProperties(prefix = "document-qa")
 public record DocumentQaProperties(
@@ -19,5 +20,6 @@ public record DocumentQaProperties(
 		String defaultModel,
 		long defaultMaxTokens,
 		String documentsDir,
-		String defaultFile) {
+		String defaultFile,
+		boolean mockEnabled) {
 }

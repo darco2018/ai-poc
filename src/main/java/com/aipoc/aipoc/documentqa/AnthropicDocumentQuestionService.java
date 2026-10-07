@@ -15,9 +15,11 @@ import com.anthropic.models.messages.Usage;
 import java.util.List;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Service;
 
 @Service
+@ConditionalOnProperty(prefix = "document-qa", name = "mock-enabled", havingValue = "false", matchIfMissing = true)
 public class AnthropicDocumentQuestionService implements DocumentQuestionService {
 
 	private static final Logger log = LoggerFactory.getLogger(AnthropicDocumentQuestionService.class);
@@ -31,6 +33,9 @@ public class AnthropicDocumentQuestionService implements DocumentQuestionService
 		this.client = client;
 		this.documentLoader = documentLoader;
 		this.properties = properties;
+
+		log.info(">>> AnthropicDocumentQuestionService is active (document-qa.mock-enabled=false)");
+
 	}
 
 	@Override
@@ -78,14 +83,14 @@ public class AnthropicDocumentQuestionService implements DocumentQuestionService
 	 * max_tokens: the answer hit your default-max-tokens limit and was cut off. Expect this often with your current setting of 200.
 	 * refusal: Claude declined the request (rare).
 	 * stop_sequence and tool_use: don't occur in this app, because it sets no stop sequences and defines no tool. */
-	private static void logCompletion(RawMessageDeltaEvent deltaEvent) {
+	static void logCompletion(RawMessageDeltaEvent deltaEvent) {
 		log.info("Stop reason: {}, output tokens: {}",
 				deltaEvent.delta().stopReason().map(Object::toString).orElse("unknown"),
 				deltaEvent.usage().outputTokens());
 	}
 
 	/** Cache write > 0 on the first request, cache read > 0 on a repeat within the cache TTL. */
-	private static void logUsage(Usage usage) {
+	static void logUsage(Usage usage) {
 		log.info("Input tokens: {}, cache write(cache creation input): {}, cache read: {}",
 				usage.inputTokens(),
 				usage.cacheCreationInputTokens().orElse(0L),
