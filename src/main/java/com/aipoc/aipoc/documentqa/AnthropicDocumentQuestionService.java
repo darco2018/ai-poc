@@ -8,13 +8,19 @@ import com.anthropic.models.messages.ContentBlockParam;
 import com.anthropic.models.messages.DocumentBlockParam;
 import com.anthropic.models.messages.MessageCreateParams;
 import com.anthropic.models.messages.PlainTextSource;
+import com.anthropic.models.messages.RawMessageDeltaEvent;
 import com.anthropic.models.messages.RawMessageStreamEvent;
 import com.anthropic.models.messages.TextBlockParam;
+import com.anthropic.models.messages.Usage;
 import java.util.List;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
 @Service
 public class AnthropicDocumentQuestionService implements DocumentQuestionService {
+
+	private static final Logger log = LoggerFactory.getLogger(AnthropicDocumentQuestionService.class);
 
 	private final AnthropicClient client;
 	private final DocumentLoader documentLoader;
@@ -55,12 +61,35 @@ public class AnthropicDocumentQuestionService implements DocumentQuestionService
 		*/
 		return consumer -> {
 			try (StreamResponse<RawMessageStreamEvent> stream = client.messages().createStreaming(params)) {
-				stream.stream()
-						.flatMap(event -> event.contentBlockDelta().stream())
-						.flatMap(deltaEvent -> deltaEvent.delta().text().stream())
-						.forEach(textDelta -> consumer.accept(textDelta.text()));
+				stream.stream().forEach(event -> {
+					event.messageStart().ifPresent(start -> logUsage(start.message().usage()));
+					event.contentBlockDelta()
+							.flatMap(deltaEvent -> deltaEvent.delta().text())
+							.ifPresent(textDelta -> consumer.accept(textDelta.text()));
+					event.messageDelta().ifPresent(AnthropicDocumentQuestionService::logCompletion);
+				});
 			}
 		};
+	}
+
+	/** Stop reason "max_tokens" means the answer was cut off by the output limit
+	 * The common stop reasons:
+	 * end_turn: Claude finished its answer naturally.
+	 * max_tokens: the answer hit your default-max-tokens limit and was cut off. Expect this often with your current setting of 200.
+	 * refusal: Claude declined the request (rare).
+	 * stop_sequence and tool_use: don't occur in this app, because it sets no stop sequences and defines no tool. */
+	private static void logCompletion(RawMessageDeltaEvent deltaEvent) {
+		log.info("Stop reason: {}, output tokens: {}",
+				deltaEvent.delta().stopReason().map(Object::toString).orElse("unknown"),
+				deltaEvent.usage().outputTokens());
+	}
+
+	/** Cache write > 0 on the first request, cache read > 0 on a repeat within the cache TTL. */
+	private static void logUsage(Usage usage) {
+		log.info("Input tokens: {}, cache write(cache creation input): {}, cache read: {}",
+				usage.inputTokens(),
+				usage.cacheCreationInputTokens().orElse(0L),
+				usage.cacheReadInputTokens().orElse(0L));
 	}
 
 	private MessageCreateParams buildParams(AnswerRequest request, Document document) {

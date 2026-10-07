@@ -16,9 +16,12 @@ import org.springframework.web.servlet.mvc.method.annotation.StreamingResponseBo
 /**
  * Streams Claude's answer about a document as plain text, e.g.
  * {@code curl -N "localhost:8080/api/documents/answer?file=Machines-of-Loving-Grace.txt"}.
+ * Without {@code file}, the configured default document is used.
  */
 @RestController
 @RequestMapping(DocumentQaController.BASE_PATH)
+// QA stands for question answering, the usual NLP term for a system
+// that answers questions about a text.
 public class DocumentQaController {
 
 	static final String BASE_PATH = "/api/documents";
@@ -40,11 +43,11 @@ public class DocumentQaController {
 
 	@GetMapping(ANSWER_PATH)
 	public ResponseEntity<StreamingResponseBody> answer(
-			@RequestParam(PARAM_FILE) String fileName,
+			@RequestParam(name = PARAM_FILE, required = false) String fileName,
 			@RequestParam(name = PARAM_MODEL, required = false) String model,
 			@RequestParam(name = PARAM_MAX_TOKENS, required = false) Long maxTokens) {
 		AnswerRequest request = new AnswerRequest(
-				fileName,
+				fileName != null ? fileName : properties.defaultFile(),
 				model != null ? model : properties.defaultModel(),
 				maxTokens != null ? maxTokens : properties.defaultMaxTokens());
 		AnswerStream answer = questionService.answer(request);

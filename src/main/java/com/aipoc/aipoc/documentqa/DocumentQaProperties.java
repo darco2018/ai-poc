@@ -10,6 +10,7 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
  * @param defaultModel     model used when the request does not specify one
  * @param defaultMaxTokens output token limit used when the request does not specify one
  * @param documentsDir     directory the documents are read from
+ * @param defaultFile      document used when the request does not specify one
  */
 @ConfigurationProperties(prefix = "document-qa")
 public record DocumentQaProperties(
@@ -17,5 +18,6 @@ public record DocumentQaProperties(
 		String userPrompt,
 		String defaultModel,
 		long defaultMaxTokens,
-		String documentsDir) {
+		String documentsDir,
+		String defaultFile) {
 }
