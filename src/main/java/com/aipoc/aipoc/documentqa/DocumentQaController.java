@@ -19,6 +19,11 @@ import org.springframework.web.servlet.mvc.method.annotation.StreamingResponseBo
  * Without {@code file}, the configured default document is used.
  */
 @RestController
+// >> it is a spring-controlled bean
+// @Controller: Marks the class as a Spring MVC component/controller discovered via component scanning.
+// plus @ResponseBody: Indicates that the return value of every handler method should be bound directly
+// //to the web response body (via HttpMessageConverters), rather than interpreted as a view name.
+
 @RequestMapping(DocumentQaController.BASE_PATH)
 // QA stands for question answering, the usual NLP term for a system
 // that answers questions about a text.
@@ -36,6 +41,9 @@ public class DocumentQaController {
 	private final DocumentQuestionService questionService;
 	private final DocumentQaProperties properties;
 
+	// Since Spring 4.3, you don't even need to write @Autowired on a single constructor—Spring assumes it by default.
+	// When Spring starts up and instantiates DocumentQaController, it looks in
+	// its ApplicationContext (bean container) for matching beans for each paramete
 	public DocumentQaController(DocumentQuestionService questionService, DocumentQaProperties properties) {
 		this.questionService = questionService;
 		this.properties = properties;

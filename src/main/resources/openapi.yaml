@@ -1,0 +1,42 @@
+openapi: "3.1.0"
+info:
+  title: "ai_poc API"
+  description: "ai_poc API"
+  version: "1.0.0"
+servers:
+  - url: "http://localhost:8080"
+    description: "Local development server"
+paths:
+  /api/documents/answer:
+    get:
+      summary: "GET api/documents/answer"
+      operationId: "answer"
+      parameters:
+        - name: "file"
+          in: "query"
+          required: false
+          schema:
+            type: "string"
+        - name: "model"
+          in: "query"
+          required: false
+          schema:
+            type: "string"
+        - name: "maxTokens"
+          in: "query"
+          required: false
+          schema:
+            type: "integer"
+            format: "int64"
+      responses:
+        "200":
+          description: "OK"
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/StreamingResponseBody"
+components:
+  schemas:
+    StreamingResponseBody:
+      type: "object"
+      properties: { }

@@ -20,6 +20,7 @@ import org.springframework.stereotype.Service;
 
 @Service
 @ConditionalOnProperty(prefix = "document-qa", name = "mock-enabled", havingValue = "false", matchIfMissing = true)
+// Spring instantiates exactly one of 2 implementations and registers one as a bean.
 public class AnthropicDocumentQuestionService implements DocumentQuestionService {
 
 	private static final Logger log = LoggerFactory.getLogger(AnthropicDocumentQuestionService.class);

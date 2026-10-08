@@ -13,6 +13,12 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
  * @param defaultFile      document used when the request does not specify one
  * @param mockEnabled      whether mock document question service is enabled
  */
+
+// Spring Boot scans for configuration properties (either via @ConfigurationPropertiesScan or @EnableConfigurationProperties).
+/*@ConfigurationProperties by itself does not register a Spring bean. It is simply metadata that tells Spring: "If
+this class is ever turned into a bean, bind its fields from application.properties using the prefix 'document-qa'."*/
+
+	// @ConfigurationProperties is not a @Component, so @ComponentScan doesn't find it
 @ConfigurationProperties(prefix = "document-qa")
 public record DocumentQaProperties(
 		String systemPrompt,
