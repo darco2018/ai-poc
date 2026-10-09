@@ -25,7 +25,8 @@ public class MockDocumentQuestionService implements DocumentQuestionService {
 
 	@Override
 	public AnswerStream answer(AnswerRequest request) {
-		documentLoader.load(request.fileName());
+		String file = request.fileName() != null ? request.fileName() : "Machines-of-Loving-Grace.txt";
+		documentLoader.load(file);
 
 		List<String> mockChunks = List.of(
 				"Based on the provided document, ",

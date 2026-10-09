@@ -5,11 +5,12 @@ import java.io.OutputStreamWriter;
 import java.io.UncheckedIOException;
 import java.io.Writer;
 import java.nio.charset.StandardCharsets;
+import jakarta.validation.Valid;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.servlet.mvc.method.annotation.StreamingResponseBody;
 
@@ -31,9 +32,6 @@ public class DocumentQaController {
 
 	static final String BASE_PATH = "/api/documents";
 	static final String ANSWER_PATH = "/answer";
-	static final String PARAM_FILE = "file";
-	static final String PARAM_MODEL = "model";
-	static final String PARAM_MAX_TOKENS = "maxTokens";
 
 	private static final MediaType TEXT_PLAIN_UTF8 =
 			new MediaType(MediaType.TEXT_PLAIN, StandardCharsets.UTF_8);
@@ -49,16 +47,15 @@ public class DocumentQaController {
 		this.properties = properties;
 	}
 
-	@GetMapping(ANSWER_PATH)
+	@PostMapping(ANSWER_PATH)
 	public ResponseEntity<StreamingResponseBody> answer(
-			@RequestParam(name = PARAM_FILE, required = false) String fileName,
-			@RequestParam(name = PARAM_MODEL, required = false) String model,
-			@RequestParam(name = PARAM_MAX_TOKENS, required = false) Long maxTokens) {
-		AnswerRequest request = new AnswerRequest(
-				fileName != null ? fileName : properties.defaultFile(),
-				model != null ? model : properties.defaultModel(),
-				maxTokens != null ? maxTokens : properties.defaultMaxTokens());
-		AnswerStream answer = questionService.answer(request);
+			@Valid @RequestBody AnswerRequest request) {
+		AnswerRequest resolvedRequest = new AnswerRequest(
+				request.question(),
+				request.fileName() != null ? request.fileName() : properties.defaultFile(),
+				request.model() != null ? request.model() : properties.defaultModel(),
+				request.maxTokens() != null ? request.maxTokens() : properties.defaultMaxTokens());
+		AnswerStream answer = questionService.answer(resolvedRequest);
 
 		StreamingResponseBody body = outputStream -> {
 			Writer writer = new OutputStreamWriter(outputStream, StandardCharsets.UTF_8);

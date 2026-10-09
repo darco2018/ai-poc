@@ -8,26 +8,15 @@ servers:
     description: "Local development server"
 paths:
   /api/documents/answer:
-    get:
-      summary: "GET api/documents/answer"
+    post:
+      summary: "POST api/documents/answer"
       operationId: "answer"
-      parameters:
-        - name: "file"
-          in: "query"
-          required: false
-          schema:
-            type: "string"
-        - name: "model"
-          in: "query"
-          required: false
-          schema:
-            type: "string"
-        - name: "maxTokens"
-          in: "query"
-          required: false
-          schema:
-            type: "integer"
-            format: "int64"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AnswerRequest"
       responses:
         "200":
           description: "OK"
@@ -40,3 +29,17 @@ components:
     StreamingResponseBody:
       type: "object"
       properties: { }
+    AnswerRequest:
+      type: "object"
+      required:
+        - question
+      properties:
+        question:
+          type: "string"
+        fileName:
+          type: "string"
+        model:
+          type: "string"
+        maxTokens:
+          type: "integer"
+          format: "int64"

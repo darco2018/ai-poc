@@ -3,7 +3,7 @@ package com.aipoc.aipoc.documentqa;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.asyncDispatch;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.request;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -14,6 +14,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
+import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
 
@@ -39,6 +40,7 @@ class MockDocumentQuestionServiceTest {
 	@Test
 	void answerStreamsMockContentDirectly() {
 		AnswerRequest request = new AnswerRequest(
+				"What is this document about?",
 				properties.defaultFile(),
 				properties.defaultModel(),
 				properties.defaultMaxTokens()
@@ -57,6 +59,7 @@ class MockDocumentQuestionServiceTest {
 	@Test
 	void answerThrowsWhenDocumentNotFound() {
 		AnswerRequest request = new AnswerRequest(
+				"What is this document about?",
 				"non-existent-file.txt",
 				properties.defaultModel(),
 				properties.defaultMaxTokens()
@@ -67,8 +70,11 @@ class MockDocumentQuestionServiceTest {
 	}
 
 	@Test
-	void getAnswerEndpointStreamsMockOutput() throws Exception {
-		MvcResult result = mockMvc.perform(get("/api/documents/answer"))
+	void postAnswerEndpointStreamsMockOutput() throws Exception {
+		String jsonBody = "{\"question\":\"What is this document about?\"}";
+		MvcResult result = mockMvc.perform(post("/api/documents/answer")
+						.contentType(MediaType.APPLICATION_JSON)
+						.content(jsonBody))
 				.andExpect(request().asyncStarted())
 				.andReturn();
 
@@ -78,9 +84,21 @@ class MockDocumentQuestionServiceTest {
 	}
 
 	@Test
-	void getAnswerEndpointReturnsNotFoundForMissingDocument() throws Exception {
-		mockMvc.perform(get("/api/documents/answer").param("file", "missing-doc.txt"))
+	void postAnswerEndpointReturnsNotFoundForMissingDocument() throws Exception {
+		String jsonBody = "{\"question\":\"What is this document about?\", \"fileName\":\"missing-doc.txt\"}";
+		mockMvc.perform(post("/api/documents/answer")
+						.contentType(MediaType.APPLICATION_JSON)
+						.content(jsonBody))
 				.andExpect(status().isNotFound());
+	}
+
+	@Test
+	void postAnswerEndpointReturnsBadRequestWhenQuestionIsMissing() throws Exception {
+		String jsonBody = "{}";
+		mockMvc.perform(post("/api/documents/answer")
+						.contentType(MediaType.APPLICATION_JSON)
+						.content(jsonBody))
+				.andExpect(status().isBadRequest());
 	}
 
 }

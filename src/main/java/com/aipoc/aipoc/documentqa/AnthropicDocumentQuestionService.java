@@ -41,7 +41,8 @@ public class AnthropicDocumentQuestionService implements DocumentQuestionService
 
 	@Override
 	public AnswerStream answer(AnswerRequest request) {
-		MessageCreateParams params = buildParams(request, documentLoader.load(request.fileName()));
+		String file = request.fileName() != null ? request.fileName() : properties.defaultFile();
+		MessageCreateParams params = buildParams(request, documentLoader.load(file));
 		/*		.
 		return consumer -> { try ... } constructs and returns an instance of AnswerStream
 		where the body { try ... } serves as the exact runtime implementation of
@@ -100,12 +101,12 @@ public class AnthropicDocumentQuestionService implements DocumentQuestionService
 
 	private MessageCreateParams buildParams(AnswerRequest request, Document document) {
 		return MessageCreateParams.builder()
-				.model(request.model())
-				.maxTokens(request.maxTokens())
+				.model(request.model() != null ? request.model() : properties.defaultModel())
+				.maxTokens(request.maxTokens() != null ? request.maxTokens() : properties.defaultMaxTokens())
 				.system(properties.systemPrompt())
 				.addUserMessageOfBlockParams(List.of(
 						ContentBlockParam.ofDocument(toDocumentBlock(document)),
-						ContentBlockParam.ofText(TextBlockParam.builder().text(properties.userPrompt()).build())))
+						ContentBlockParam.ofText(TextBlockParam.builder().text(request.question()).build())))
 				.build();
 	}
 
