@@ -1,5 +1,9 @@
-package com.aipoc.aipoc.documentqa;
+package com.aipoc.aipoc.documentqa.anthropic.filedocument.service;
 
+import com.aipoc.aipoc.documentqa.anthropic.filedocument.entity.FileAnswerRequest;
+import com.aipoc.aipoc.documentqa.anthropic.filedocument.entity.FileDocument;
+import com.aipoc.aipoc.documentqa.anthropic.filedocument.loader.FileDocumentLoader;
+import com.aipoc.aipoc.documentqa.anthropic.filedocument.config.FileDocumentQaProperties;
 import com.anthropic.client.AnthropicClient;
 import com.anthropic.core.http.StreamResponse;
 import com.anthropic.models.messages.CacheControlEphemeral;
@@ -19,20 +23,20 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Service;
 
 @Service
-@ConditionalOnProperty(prefix = "document-qa", name = "mock-enabled", havingValue = "false", matchIfMissing = true)
+@ConditionalOnProperty(prefix = "file-document-qa", name = "mock-enabled", havingValue = "false", matchIfMissing = true)
 // Spring instantiates exactly one of 2 implementations and registers one as a bean.
-public class AnthropicDocumentQuestionService implements DocumentQuestionService {
+public class AnthropicQuestionServiceImpl implements AnthropicQuestionService {
 
-	private static final Logger log = LoggerFactory.getLogger(AnthropicDocumentQuestionService.class);
+	private static final Logger log = LoggerFactory.getLogger(AnthropicQuestionServiceImpl.class);
 
 	private final AnthropicClient client;
-	private final DocumentLoader documentLoader;
-	private final DocumentQaProperties properties;
+	private final FileDocumentLoader fileDocumentLoader;
+	private final FileDocumentQaProperties properties;
 
-	public AnthropicDocumentQuestionService(AnthropicClient client, DocumentLoader documentLoader,
-			DocumentQaProperties properties) {
+	public AnthropicQuestionServiceImpl(AnthropicClient client, FileDocumentLoader fileDocumentLoader,
+										FileDocumentQaProperties properties) {
 		this.client = client;
-		this.documentLoader = documentLoader;
+		this.fileDocumentLoader = fileDocumentLoader;
 		this.properties = properties;
 
 		log.info(">>> AnthropicDocumentQuestionService is active (document-qa.mock-enabled=false)");
@@ -40,9 +44,10 @@ public class AnthropicDocumentQuestionService implements DocumentQuestionService
 	}
 
 	@Override
-	public AnswerStream answer(AnswerRequest request) {
-		String file = request.fileName() != null ? request.fileName() : properties.defaultFile();
-		MessageCreateParams params = buildParams(request, documentLoader.load(file));
+	public AnswerStream answer(FileAnswerRequest request) {
+		String file = request.fileName() == null || request.fileName().isBlank()? properties.defaultFile() : request.fileName() ;
+		log.info("Default file: " + file);
+		MessageCreateParams params = buildParams(request, fileDocumentLoader.load(file));
 		/*		.
 		return consumer -> { try ... } constructs and returns an instance of AnswerStream
 		where the body { try ... } serves as the exact runtime implementation of
@@ -73,7 +78,7 @@ public class AnthropicDocumentQuestionService implements DocumentQuestionService
 					event.contentBlockDelta()
 							.flatMap(deltaEvent -> deltaEvent.delta().text())
 							.ifPresent(textDelta -> consumer.accept(textDelta.text()));
-					event.messageDelta().ifPresent(AnthropicDocumentQuestionService::logCompletion);
+					event.messageDelta().ifPresent(AnthropicQuestionServiceImpl::logCompletion);
 				});
 			}
 		};
@@ -85,36 +90,36 @@ public class AnthropicDocumentQuestionService implements DocumentQuestionService
 	 * max_tokens: the answer hit your default-max-tokens limit and was cut off. Expect this often with your current setting of 200.
 	 * refusal: Claude declined the request (rare).
 	 * stop_sequence and tool_use: don't occur in this app, because it sets no stop sequences and defines no tool. */
-	static void logCompletion(RawMessageDeltaEvent deltaEvent) {
+	public static void logCompletion(RawMessageDeltaEvent deltaEvent) {
 		log.info("Stop reason: {}, output tokens: {}",
 				deltaEvent.delta().stopReason().map(Object::toString).orElse("unknown"),
 				deltaEvent.usage().outputTokens());
 	}
 
 	/** Cache write > 0 on the first request, cache read > 0 on a repeat within the cache TTL. */
-	static void logUsage(Usage usage) {
+	public static void logUsage(Usage usage) {
 		log.info("Input tokens: {}, cache write(cache creation input): {}, cache read: {}",
 				usage.inputTokens(),
 				usage.cacheCreationInputTokens().orElse(0L),
 				usage.cacheReadInputTokens().orElse(0L));
 	}
 
-	private MessageCreateParams buildParams(AnswerRequest request, Document document) {
+	private MessageCreateParams buildParams(FileAnswerRequest request, FileDocument fileDocument) {
 		return MessageCreateParams.builder()
 				.model(request.model() != null ? request.model() : properties.defaultModel())
 				.maxTokens(request.maxTokens() != null ? request.maxTokens() : properties.defaultMaxTokens())
 				.system(properties.systemPrompt())
 				.addUserMessageOfBlockParams(List.of(
-						ContentBlockParam.ofDocument(toDocumentBlock(document)),
+						ContentBlockParam.ofDocument(toDocumentBlock(fileDocument)),
 						ContentBlockParam.ofText(TextBlockParam.builder().text(request.question()).build())))
 				.build();
 	}
 
 	/** Citations point into the text; cache control lets repeat questions reuse the document. */
-	private static DocumentBlockParam toDocumentBlock(Document document) {
+	private static DocumentBlockParam toDocumentBlock(FileDocument fileDocument) {
 		return DocumentBlockParam.builder()
-				.source(PlainTextSource.builder().data(document.content()).build())
-				.title(document.title())
+				.source(PlainTextSource.builder().data(fileDocument.content()).build())
+				.title(fileDocument.title())
 				.citations(CitationsConfigParam.builder().enabled(true).build())
 				.cacheControl(CacheControlEphemeral.builder().build())
 				.build();

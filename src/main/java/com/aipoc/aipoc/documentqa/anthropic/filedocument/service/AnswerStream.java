@@ -1,4 +1,4 @@
-package com.aipoc.aipoc.documentqa;
+package com.aipoc.aipoc.documentqa.anthropic.filedocument.service;
 
 import java.util.function.Consumer;
 

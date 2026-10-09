@@ -1,10 +1,15 @@
-package com.aipoc.aipoc.documentqa;
+package com.aipoc.aipoc.documentqa.anthropic.filedocument.controller;
 
 import java.io.IOException;
 import java.io.OutputStreamWriter;
 import java.io.UncheckedIOException;
 import java.io.Writer;
 import java.nio.charset.StandardCharsets;
+
+import com.aipoc.aipoc.documentqa.anthropic.filedocument.entity.FileAnswerRequest;
+import com.aipoc.aipoc.documentqa.anthropic.filedocument.config.FileDocumentQaProperties;
+import com.aipoc.aipoc.documentqa.anthropic.filedocument.service.AnthropicQuestionService;
+import com.aipoc.aipoc.documentqa.anthropic.filedocument.service.AnswerStream;
 import jakarta.validation.Valid;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -25,10 +30,10 @@ import org.springframework.web.servlet.mvc.method.annotation.StreamingResponseBo
 // plus @ResponseBody: Indicates that the return value of every handler method should be bound directly
 // //to the web response body (via HttpMessageConverters), rather than interpreted as a view name.
 
-@RequestMapping(DocumentQaController.BASE_PATH)
+@RequestMapping(FileQaController.BASE_PATH)
 // QA stands for question answering, the usual NLP term for a system
 // that answers questions about a text.
-public class DocumentQaController {
+public class FileQaController {
 
 	static final String BASE_PATH = "/api/documents";
 	static final String ANSWER_PATH = "/answer";
@@ -36,26 +41,26 @@ public class DocumentQaController {
 	private static final MediaType TEXT_PLAIN_UTF8 =
 			new MediaType(MediaType.TEXT_PLAIN, StandardCharsets.UTF_8);
 
-	private final DocumentQuestionService questionService;
-	private final DocumentQaProperties properties;
+	private final AnthropicQuestionService anthropicQuestionService;
+	private final FileDocumentQaProperties properties;
 
 	// Since Spring 4.3, you don't even need to write @Autowired on a single constructor—Spring assumes it by default.
 	// When Spring starts up and instantiates DocumentQaController, it looks in
 	// its ApplicationContext (bean container) for matching beans for each paramete
-	public DocumentQaController(DocumentQuestionService questionService, DocumentQaProperties properties) {
-		this.questionService = questionService;
+	public FileQaController(AnthropicQuestionService questionService, FileDocumentQaProperties properties) {
+		this.anthropicQuestionService = questionService;
 		this.properties = properties;
 	}
 
 	@PostMapping(ANSWER_PATH)
 	public ResponseEntity<StreamingResponseBody> answer(
-			@Valid @RequestBody AnswerRequest request) {
-		AnswerRequest resolvedRequest = new AnswerRequest(
+			@Valid @RequestBody FileAnswerRequest request) {
+		FileAnswerRequest resolvedRequest = new FileAnswerRequest(
 				request.question(),
 				request.fileName() != null ? request.fileName() : properties.defaultFile(),
 				request.model() != null ? request.model() : properties.defaultModel(),
 				request.maxTokens() != null ? request.maxTokens() : properties.defaultMaxTokens());
-		AnswerStream answer = questionService.answer(resolvedRequest);
+		AnswerStream answer = anthropicQuestionService.answer(resolvedRequest);
 
 		StreamingResponseBody body = outputStream -> {
 			Writer writer = new OutputStreamWriter(outputStream, StandardCharsets.UTF_8);

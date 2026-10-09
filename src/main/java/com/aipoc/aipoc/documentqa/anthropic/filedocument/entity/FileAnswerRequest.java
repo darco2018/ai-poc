@@ -1,11 +1,11 @@
-package com.aipoc.aipoc.documentqa;
+package com.aipoc.aipoc.documentqa.anthropic.filedocument.entity;
 
 import jakarta.validation.constraints.NotBlank;
 
 /**
  * Request payload for asking a question about a document.
  */
-public record AnswerRequest(
+public record FileAnswerRequest(
 		@NotBlank(message = "Question is mandatory")
 		String question,
 		String fileName,

@@ -1,4 +1,4 @@
-package com.aipoc.aipoc.documentqa;
+package com.aipoc.aipoc.documentqa.anthropic.filedocument.config;
 
 import com.anthropic.client.AnthropicClient;
 import com.anthropic.client.okhttp.AnthropicOkHttpClient;
@@ -16,14 +16,14 @@ import org.springframework.context.annotation.Configuration;
 
 // You explicitly register the specific class on any @Configuration class:
 
-@EnableConfigurationProperties(DocumentQaProperties.class) // instead of broad classpath scanning,with
+@EnableConfigurationProperties(FileDocumentQaProperties.class) // instead of broad classpath scanning,with
 // @ConfigurationPropertiesSca
 // you explicitly register individual properties classes on a @Configuration class.
 // it creates the DocumentQaProperties bean, and injects it wherever requested.
 // @Configuration <<<registration << @ConfigurationProperties
 
 @Configuration
-public class AnthropicConfig {
+public class FileAnthropicConfig {
 
 	/** Reads ANTHROPIC_API_KEY from the environment; closed by Spring on shutdown. */
 	@Bean

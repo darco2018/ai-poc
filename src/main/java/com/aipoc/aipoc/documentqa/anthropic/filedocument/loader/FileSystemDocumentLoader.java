@@ -1,9 +1,11 @@
-package com.aipoc.aipoc.documentqa;
+package com.aipoc.aipoc.documentqa.anthropic.filedocument.loader;
 
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 
+import com.aipoc.aipoc.documentqa.anthropic.filedocument.entity.FileDocument;
+import com.aipoc.aipoc.documentqa.anthropic.filedocument.config.FileDocumentQaProperties;
 import org.springframework.stereotype.Component;
 
 /**
@@ -13,22 +15,22 @@ import org.springframework.stereotype.Component;
  * the directory are accepted - no sub-paths, no {@code ..}, no other extensions.
  */
 @Component
-public class FileSystemDocumentLoader implements DocumentLoader {
+public class FileSystemDocumentLoader implements FileDocumentLoader {
 
 	private static final String TEXT_EXTENSION = ".txt";
 	private static final char TITLE_WORD_SEPARATOR = '-';
 
 	private final Path documentsDir;
 
-	public FileSystemDocumentLoader(DocumentQaProperties properties) {
+	public FileSystemDocumentLoader(FileDocumentQaProperties properties) {
 		this.documentsDir = Path.of(properties.documentsDir()).toAbsolutePath().normalize();
 	}
 
 	@Override
-	public Document load(String fileName) {
+	public FileDocument load(String fileName) {
 		Path file = resolve(fileName);
 		try {
-			return new Document(toTitle(fileName), Files.readString(file));
+			return new FileDocument(toTitle(fileName), Files.readString(file));
 		} catch (IOException e) {
 			throw new DocumentNotFoundException(fileName, e);
 		}

@@ -1,5 +1,7 @@
-package com.aipoc.aipoc.documentqa;
+package com.aipoc.aipoc.documentqa.anthropic.filedocument.service;
 
+import com.aipoc.aipoc.documentqa.anthropic.filedocument.entity.FileAnswerRequest;
+import com.aipoc.aipoc.documentqa.anthropic.filedocument.loader.FileDocumentLoader;
 import com.anthropic.models.messages.MessageDeltaUsage;
 import com.anthropic.models.messages.RawMessageDeltaEvent;
 import com.anthropic.models.messages.StopReason;
@@ -11,29 +13,27 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Service;
 
 @Service
-@ConditionalOnProperty(prefix = "document-qa", name = "mock-enabled", havingValue = "true")
-public class MockDocumentQuestionService implements DocumentQuestionService {
+@ConditionalOnProperty(prefix = "file-document-qa", name = "mock-enabled", havingValue = "true")
+public class MockAnthropicQuestionService implements AnthropicQuestionService {
 
-	private static final Logger log = LoggerFactory.getLogger(MockDocumentQuestionService.class);
+	private static final Logger log = LoggerFactory.getLogger(MockAnthropicQuestionService.class);
 
-	private final DocumentLoader documentLoader;
+	private final FileDocumentLoader fileDocumentLoader;
 
-	public MockDocumentQuestionService(DocumentLoader documentLoader) {
-		this.documentLoader = documentLoader;
+	public MockAnthropicQuestionService(FileDocumentLoader fileDocumentLoader) {
+		this.fileDocumentLoader = fileDocumentLoader;
 		log.info(">>> Mock DocumentQuestionService is active (document-qa.mock-enabled=true)");
 	}
 
 	@Override
-	public AnswerStream answer(AnswerRequest request) {
-		String file = request.fileName() != null ? request.fileName() : "Machines-of-Loving-Grace.txt";
-		documentLoader.load(file);
+	public AnswerStream answer(FileAnswerRequest request) {
+		log.info("fileName: " + request.fileName());
+		String file = request.fileName() == null || request.fileName().isBlank()? "Machines-of-Loving-Grace-introduction-1300-tokens.txt" : request.fileName() ;
+		fileDocumentLoader.load(file);
 
 		List<String> mockChunks = List.of(
 				"Based on the provided document, ",
-				"here is a mocked answer for testing and development: ",
-				"Powerful AI has significant upside across biology, neuroscience, ",
-				"economic development, peace, and work, ",
-				"while real bottlenecks often involve physical experiments and clinical validation."
+				"here is a mocked answer for testing and development: "
 		);
 
 		Usage mockUsage = Usage.builder()
@@ -64,11 +64,11 @@ public class MockDocumentQuestionService implements DocumentQuestionService {
 				.build();
 
 		return consumer -> {
-			AnthropicDocumentQuestionService.logUsage(mockUsage);
+			AnthropicQuestionServiceImpl.logUsage(mockUsage);
 			for (String chunk : mockChunks) {
 				consumer.accept(chunk);
 			}
-			AnthropicDocumentQuestionService.logCompletion(mockDelta);
+			AnthropicQuestionServiceImpl.logCompletion(mockDelta);
 		};
 	}
 

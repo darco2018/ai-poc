@@ -1,4 +1,4 @@
-package com.aipoc.aipoc.documentqa;
+package com.aipoc.aipoc.documentqa.anthropic.filedocument.config;
 
 import org.springframework.boot.context.properties.ConfigurationProperties;
 
@@ -19,8 +19,8 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 this class is ever turned into a bean, bind its fields from application.properties using the prefix 'document-qa'."*/
 
 	// @ConfigurationProperties is not a @Component, so @ComponentScan doesn't find it
-@ConfigurationProperties(prefix = "document-qa")
-public record DocumentQaProperties(
+@ConfigurationProperties(prefix = "file-document-qa")
+public record FileDocumentQaProperties(
 		String systemPrompt,
 		String userPrompt,
 		String defaultModel,
